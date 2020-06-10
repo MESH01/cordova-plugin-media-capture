@@ -28,6 +28,8 @@
 #define kW3CMediaFormatDuration @"duration"
 #define kW3CMediaModeType @"type"
 
+#define CDV_PHOTO_PREFIX @"cdv_photo_"
+
 @implementation NSBundle (PluginExtensions)
 
 + (NSBundle*) pluginBundle:(CDVPlugin*)plugin {
@@ -293,6 +295,31 @@
     NSArray* fileArray = [NSArray arrayWithObject:fileDict];
 
     return [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:fileArray];
+}
+
+- (NSString *) createTmpVideo:(NSString *) moviePath {
+    NSString* moviePathExtension = [moviePath pathExtension];
+    NSString* copyMoviePath = [self tempFilePath:moviePathExtension];
+    NSFileManager* fileMgr = [[NSFileManager alloc] init];
+    NSError *error;
+    [fileMgr copyItemAtPath:moviePath toPath:copyMoviePath error:&error];
+    return [[NSURL fileURLWithPath:copyMoviePath] absoluteString];
+}
+
+- (NSString*)tempFilePath:(NSString*)extension
+{
+    NSString* docsPath = [NSTemporaryDirectory()stringByStandardizingPath];
+    NSFileManager* fileMgr = [[NSFileManager alloc] init]; // recommended by Apple (vs [NSFileManager defaultManager]) to be threadsafe
+    NSString* filePath;
+
+    // unique file name
+    NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];
+    NSNumber *timeStampObj = [NSNumber numberWithDouble: timeStamp];
+    do {
+        filePath = [NSString stringWithFormat:@"%@/%@%ld.%@", docsPath, CDV_PHOTO_PREFIX, [timeStampObj longValue], extension];
+    } while ([fileMgr fileExistsAtPath:filePath]);
+
+    return filePath;
 }
 
 - (void)showAlertIfAccessProhibited
@@ -562,6 +589,10 @@
         // process video
         NSString* moviePath = [(NSURL *)[info objectForKey:UIImagePickerControllerMediaURL] path];
         if (moviePath) {
+            // On iOS 13 the movie path becomes inaccessible, create and return a copy
+            if (IsAtLeastiOSVersion(@"13.0")) {
+                moviePath = [self createTmpVideo:[[info objectForKey:UIImagePickerControllerMediaURL] path]];
+            }
             result = [self processVideo:moviePath forCallbackId:callbackId];
         }
     }
