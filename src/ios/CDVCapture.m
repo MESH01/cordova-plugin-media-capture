@@ -151,13 +151,35 @@
             // iOS 3.0
             pickerController.mediaTypes = [NSArray arrayWithObjects:(NSString*)kUTTypeImage, nil];
         }
+        // iOS 4.0
+        if ([pickerController respondsToSelector:@selector(cameraCaptureMode)]) {
+            pickerController.cameraCaptureMode = UIImagePickerControllerCameraCaptureModeVideo;
 
-        /*if ([pickerController respondsToSelector:@selector(cameraCaptureMode)]){
-            // iOS 4.0
-            pickerController.cameraCaptureMode = UIImagePickerControllerCameraCaptureModePhoto;
-            pickerController.cameraDevice = UIImagePickerControllerCameraDeviceRear;
-            pickerController.cameraFlashMode = UIImagePickerControllerCameraFlashModeAuto;
-        }*/
+            NSNumber* quality = [options objectForKey:@"ios_quality"];
+
+            if ([quality isEqual:@("compression_none_640x480")]){ //Compression none
+                pickerController.videoQuality = UIImagePickerControllerQualityType640x480;
+            }
+            else if ([quality isEqual:@("compression_none_960x540")]){ //Compression none
+                pickerController.videoQuality = UIImagePickerControllerQualityTypeIFrame960x540;
+            }
+            else if ([quality isEqual:@("compression_none_1280x720")]){ //Compression none
+                pickerController.videoQuality = UIImagePickerControllerQualityTypeIFrame1280x720;
+            }
+            else if ([quality isEqual:@("high")]){ //Compression low
+                pickerController.videoQuality = UIImagePickerControllerQualityTypeHigh;
+            }
+            else if ([quality isEqual:@("medium")]){ //Compression medium
+                pickerController.videoQuality = UIImagePickerControllerQualityTypeMedium;
+            }
+            else if ([quality isEqual:@("low")]){ //strongest compression, resolution 192x144
+                pickerController.videoQuality = UIImagePickerControllerQualityTypeLow;
+            }
+
+            // pickerController.videoQuality = UIImagePickerControllerQualityTypeHigh;
+            // pickerController.cameraDevice = UIImagePickerControllerCameraDeviceRear;
+            // pickerController.cameraFlashMode = UIImagePickerControllerCameraFlashModeAuto;
+        }
         // CDVImagePicker specific property
         pickerController.callbackId = callbackId;
         pickerController.modalPresentationStyle = UIModalPresentationCurrentContext;
